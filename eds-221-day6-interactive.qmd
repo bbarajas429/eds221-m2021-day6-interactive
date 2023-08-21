@@ -99,7 +99,6 @@ names(wb_indicators_tidy)
 #                                "co2_emissions_kt",
 #                                "fossil_fuels_cons_pt",
 #                                "water_stress")
-
 ```
 
 -   rename columns via association (preferred)
