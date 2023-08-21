@@ -2,12 +2,104 @@
 title: "Day 6 Interactive"
 format: html
 editor: visual
+execute: 
+  warning: false
 ---
 
-## Packages
+## Get Started
+
+Load packages
 
 ```{r}
 library(here)
 library(janitor)
 library(tidyverse)
 ```
+
+Read in data
+
+```{r}
+# read in using read_csv
+# file is not in root, it's within the sub folder "data" so use here
+# define the na values, here they are .. or blank cells
+wb_indicators <- read_csv(here("data", "wb_indicators.csv"), na = c("..", ""))
+```
+
+## Creating Tidy Data
+
+Longer - melt year columns together
+
+```{r}
+# year goes across multiple columns, these need to be melted
+wb_indicators_long <- wb_indicators %>% 
+  # if entering a column name with spaces or numbers, use backticks
+  pivot_longer(cols = `2001 [YR2001]`:`2020 [YR2020]`,
+               names_to = 'year',
+               values_to = 'indicator_value')
+
+# separate the year so it's not listed twice 2001 [YR2001] into 2001
+wb_indicators_clean <- wb_indicators_long %>%
+  #separate using the space between the number and bracket, from tidyr
+  separate(col = year,
+           into = c("year", "year_chr"), sep = " ") %>% 
+  # pipe straight in & continue to remove unwanted columns
+  # negative in front of the column names removes the columns
+  dplyr::select(-year_chr, -`Country Code`, -`Series Code`)
+
+```
+
+Wider - Separate series name
+
+-   unique() function allows you to see all the unique pieces within a group
+
+```{r}
+# use unique() to see all titles in series name
+unique(wb_indicators_clean$`Series Name`)
+
+#some series names are missing, we'll want to delete these entire rows
+wb_indicators_tidy <- wb_indicators_clean %>% 
+  tidyr::drop_na(`Series Name`)
+
+#double check that NA series were dropped using unique again
+unique(wb_indicators_tidy$`Series Name`)
+```
+
+-   spread series using pivot_wider
+
+```{r}
+# spread series name into individual columns
+wb_indicators_tidy <- wb_indicators_tidy %>% 
+  # tell it variable you're getting names from
+  pivot_wider(names_from = `Series Name`,
+              #values to fill column are coming from indicator_value column
+              values_from = indicator_value) %>% 
+  # use rename function to associate old and new columns, rename() doesn't require quotes
+  dplyr::rename(country = `Country Name`,
+                access_to_clean_fuels_pp = `Access to clean fuels and technologies for cooking (% of population)`,
+                access_electricity_pp = `Access to electricity (% of population)`,
+                co2_emissions_kt = `CO2 emissions (kt)`,
+                fossil_fuel_cons_pt = `Fossil fuel energy consumption (% of total)`,
+                water_stress = `Level of water stress: freshwater withdrawal as a proportion of available freshwater resources`)
+
+#check using names()
+names(wb_indicators_tidy)
+```
+
+-   rename columns by creating a vector (inefficient)
+
+```{r}
+# rewrite names using a vector
+# not ideal in case new columns get added, this method is dependent on position
+# names(wb_indicators_tidy) <- c("country",
+#                                "year",
+#                                "access_clean_fuels_pp",
+#                                "access_electricity_pp",
+#                                "co2_emissions_kt",
+#                                "fossil_fuels_cons_pt",
+#                                "water_stress")
+
+```
+
+-   rename columns via association (preferred)
+
+    -   added above to pivot_wider step
