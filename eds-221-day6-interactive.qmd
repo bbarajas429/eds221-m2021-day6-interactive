@@ -79,7 +79,9 @@ wb_indicators_tidy <- wb_indicators_tidy %>%
                 access_electricity_pp = `Access to electricity (% of population)`,
                 co2_emissions_kt = `CO2 emissions (kt)`,
                 fossil_fuel_cons_pt = `Fossil fuel energy consumption (% of total)`,
-                water_stress = `Level of water stress: freshwater withdrawal as a proportion of available freshwater resources`)
+                water_stress = `Level of water stress: freshwater withdrawal as a proportion of available freshwater resources`) %>% 
+  #change year to numeric for the graph
+  dplyr::mutate(year = as.numeric(year))
 
 #check using names()
 names(wb_indicators_tidy)
@@ -103,3 +105,13 @@ names(wb_indicators_tidy)
 -   rename columns via association (preferred)
 
     -   added above to pivot_wider step
+
+Making a chart - CO2 emissions over year
+
+```{r}
+# year cannot be a charater 
+ggplot(wb_indicators_tidy, aes(x = year,
+                               y = co2_emissions_kt)) +
+  geom_line(aes(color = country)) +
+  theme(legend.position = "none")
+```
